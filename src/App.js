@@ -13,25 +13,27 @@ import api from "./services/api";
 
 export default function App() {
   const [repositories, setRepositories] = useState([])
-  
-  async function handleLikeRepository(id) {
-    await api.post(`/repositories/${id}/like`)
-    const {data} = await api.get('/repositories')
 
-    console.log('data: ', data)
-    
-    if(data){
-      setRepositories(data);
-    }
+  async function handleLikeRepository(id) {
+    const response = await api.post(`/repositories/${id}/like`)
+
+    const likedRepository = response.data
+
+    const repositoriesUpdated = repositories.map(repository => {
+      if(repository.id === id){
+        return likedRepository
+      } else {
+        return repository
+      }
+    })
+
+    setRepositories(repositoriesUpdated)
   }
 
   useEffect(() =>{
-    async function loadRepositories() {
-      const {data} = await api.get('/repositories')
-      setRepositories(data);
-    }
-
-    loadRepositories()
+    api.get('repositories').then(response => {
+      setRepositories(response.data)
+    })
   }, []);
 
   return (
@@ -42,12 +44,12 @@ export default function App() {
           style={styles.repositoryContainer}
           data={repositories}
           keyExtractor={repository => repository.id}
-          renderItem={({item}) => (
+          renderItem={({item: repository}) => (
             <View>
-              <Text style={styles.repository}>{item.title}</Text>
+              <Text style={styles.repository}>{repository.title}</Text>
         
               <View style={styles.techsContainer}>
-                {item.techs.map(tech => (
+                {repository.techs.map(tech => (
                   <Text key={tech} style={styles.tech}>
                     {tech}
                   </Text>
@@ -58,18 +60,16 @@ export default function App() {
               <View style={styles.likesContainer}>
                 <Text
                   style={styles.likeText}
-                  // Remember to replace "1" below with repository ID: {`repository-likes-${repository.id}`}
-                  testID={`repository-likes-${item.id}`}
+                  testID={`repository-likes-${repository.id}`}
                 >
-                  {`${item.likes} ${item.likes > 1 ? 'curtidas' : 'curtida'}`}
+                  {repository.likes} curtidas
                 </Text>
               </View>
     
               <TouchableOpacity
                 style={styles.button}
-                onPress={() => handleLikeRepository(item.id)}
-                // Remember to replace "1" below with repository ID: {`like-button-${repository.id}`}
-                testID={`like-button-${item.id}`}
+                onPress={() => handleLikeRepository(repository.id)}
+                testID={`like-button-${repository.id}`}
               >
                 <Text style={styles.buttonText}>Curtir</Text>
               </TouchableOpacity>
